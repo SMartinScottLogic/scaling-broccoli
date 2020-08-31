@@ -8,7 +8,6 @@ public class FooTableModel extends AbstractTableModel {
 
 	private FileData getFileData(String filename) {
 		if(!fileData.containsKey(curFile)) {
-			System.err.printf("Need to load %s%n", curFile);
 			FileData tFileData = null;
 			try {
 				tFileData = FileData.fromFile(curFile);

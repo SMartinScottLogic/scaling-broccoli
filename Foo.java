@@ -20,8 +20,6 @@ public class Foo {
 
 	public Foo() {
 		model.setFile(path, filename);
-		model.setColumnNames(columnIdentifiers);
-		model.setData(data);
 
 		JTable table = new JTable(model);
 		table.setFont(new Font("Times New Roman", Font.PLAIN, 13));
@@ -29,14 +27,21 @@ public class Foo {
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
 		DefaultListModel<String> listModel = new DefaultListModel<>();
-		files.forEach(listModel::addElement);
 		JList<String> list = new JList<>(listModel);
+		for(int index = 0; index < files.size(); index ++) {
+			String file = files.get(index);
+			if(file.equals(filename)) {
+				list.getSelectionModel().clearSelection();
+				list.getSelectionModel().setSelectionInterval(index, index);
+			}
+			listModel.addElement(file);
+		}
 		ListSelectionModel listSelectionModel = list.getSelectionModel();
 		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 		listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
 
 		panel_1.setLayout(new BorderLayout());
-		panel_1.add(scrollPane, BorderLayout.EAST);
+		panel_1.add(scrollPane, BorderLayout.CENTER);
 		panel_1.add(new JScrollPane(list), BorderLayout.WEST);
 
 		populateMenu();
@@ -194,45 +199,7 @@ public class Foo {
 
 	private static String filename;
 	private static Path path;
-	private static java.util.List<java.util.List<String>> data = new ArrayList<>();
-	private static java.util.List<String> columnIdentifiers = new ArrayList<>();
 	private static java.util.List<String> files = new ArrayList<>();
-
-	private static void readFile() {
-		System.err.println("Reading file from: '" + filename + "'");
-		File inputFile = new File(filename);
-		try (FileReader fr = new FileReader(inputFile);
-				BufferedReader br = new BufferedReader(fr)) 
-		{
-			String firstRow = br.readLine().trim();
-			if (firstRow != null) {
-				// headers:
-				String[] ci = firstRow.split("\t");
-
-				columnIdentifiers = new ArrayList<String>();
-				for (int j =0; j < ci.length; j++) {
-					columnIdentifiers.add(ci[j]);
-				}
-			}
-			// rows
-			Object[] tableLines = br.lines().toArray();
-			// data rows
-			for (int i = 0; i < tableLines.length; i++) {
-				String line = tableLines[i].toString().trim();
-				String[] dataRow = line.split("\t");
-				ArrayList<String> strings = new ArrayList<>();
-				for (int j =0; j < dataRow.length; j++) {
-					strings.add(dataRow[j]);
-				}
-				data.add(strings);
-			}
-
-			fr.close();
-		}
-		catch (IOException ioe) {
-			System.out.println("error: " + ioe.getMessage());
-		}
-	}
 
 	public static void main(String[] args) throws Exception {
 		if(args.length == 0) {
@@ -247,11 +214,11 @@ public class Foo {
 		}
 
 		if(file.isFile()) {
-			filename = file.toString();
-			file = file.getParentFile();
+			path = file.getParentFile().toPath();
+			filename = path.relativize(file.toPath()).toString();
+		} else {
+			path = file.toPath();
 		}
-
-		path = file.toPath();
 
 		Files.list(path)
 			.filter(s -> s.toString().endsWith(".txt"))
@@ -261,8 +228,6 @@ public class Foo {
 		if(filename == null) {
 			filename = files.get(0);
 		}
-
-		readFile();
 
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
