@@ -4,7 +4,9 @@ import java.awt.Font;
 import java.util.*;
 import java.io.*;
 import javax.swing.*;
+import javax.swing.event.*;
 import javax.swing.table.*;
+
 import java.awt.*;
 import java.awt.event.*;
 
@@ -17,6 +19,7 @@ public class Foo {
 	private JScrollPane scrollPane;
 
 	public Foo() {
+		model.setFile(path, filename);
 		model.setColumnNames(columnIdentifiers);
 		model.setData(data);
 
@@ -24,16 +27,41 @@ public class Foo {
 		table.setFont(new Font("Times New Roman", Font.PLAIN, 13));
 		scrollPane = new JScrollPane(table); 
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
-		
+
 		DefaultListModel<String> listModel = new DefaultListModel<>();
 		files.forEach(listModel::addElement);
 		JList<String> list = new JList<>(listModel);
+		ListSelectionModel listSelectionModel = list.getSelectionModel();
+		list.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		listSelectionModel.addListSelectionListener(new SharedListSelectionHandler());
 
 		panel_1.setLayout(new BorderLayout());
 		panel_1.add(scrollPane, BorderLayout.EAST);
 		panel_1.add(new JScrollPane(list), BorderLayout.WEST);
 
 		populateMenu();
+	}
+
+	class SharedListSelectionHandler implements ListSelectionListener {
+		public void valueChanged(ListSelectionEvent e) {
+			ListSelectionModel lsm = (ListSelectionModel)e.getSource();
+
+			if (lsm.isSelectionEmpty() || e.getValueIsAdjusting()) {
+				return;
+			}
+
+			int firstIndex = e.getFirstIndex();
+			int lastIndex = e.getLastIndex();
+
+			// Find out which indexes are selected.
+			int minIndex = lsm.getMinSelectionIndex();
+			int maxIndex = lsm.getMaxSelectionIndex();
+			for (int i = minIndex; i <= maxIndex; i++) {
+				if (lsm.isSelectedIndex(i)) {
+					model.setFile(path, files.get(i));
+				}
+			}
+		}
 	}
 
 	private void saveTSV() {
@@ -164,7 +192,7 @@ public class Foo {
 
 	}
 
-    private static String filename = "test";
+	private static String filename;
 	private static Path path;
 	private static java.util.List<java.util.List<String>> data = new ArrayList<>();
 	private static java.util.List<String> columnIdentifiers = new ArrayList<>();
@@ -212,19 +240,17 @@ public class Foo {
 			System.exit(-1);
 		}
 		File file = new File(args[0]);
-		
+
 		if(!file.exists()) {
 			System.err.printf("No such file: '%s'%n", args[0]);
 			System.exit(-1);
 		}
-		
+
 		if(file.isFile()) {
 			filename = file.toString();
 			file = file.getParentFile();
-			
-			readFile();
 		}
-		
+
 		path = file.toPath();
 
 		Files.list(path)
@@ -232,6 +258,11 @@ public class Foo {
 			.map(p -> path.relativize(p).toString())
 			.sorted(Comparator.comparing(String::toLowerCase))
 			.forEach(files::add);
+		if(filename == null) {
+			filename = files.get(0);
+		}
+
+		readFile();
 
 		SwingUtilities.invokeLater(new Runnable() {
 			public void run() {
