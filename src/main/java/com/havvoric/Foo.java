@@ -1,3 +1,5 @@
+package com.havvoric;
+
 import java.awt.BorderLayout;
 import java.awt.Font;
 
@@ -18,7 +20,7 @@ public class Foo {
 	private FooTableModel model = new FooTableModel();
 	private JScrollPane scrollPane;
 
-	public Foo() {
+	public Foo(String filename) {
 		model.setFile(path, filename);
 
 		JTable table = new JTable(model);
@@ -68,7 +70,7 @@ public class Foo {
 			}
 		}
 	}
-
+/*
 	private void saveTSV() {
 		System.err.print("Writing file to: '" + filename + "'...");
 		File outputFile = new File(filename);
@@ -97,7 +99,7 @@ public class Foo {
 			System.out.println("error: " + ioe.getMessage());
 		}
 	}
-
+*/
 	private void populateMenu() {
 		//Build the first menu.
 		JMenu menu = new JMenu("File");
@@ -132,7 +134,7 @@ public class Foo {
 		menuItem = new JMenuItem("Save", KeyEvent.VK_S);
 		menuItem.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent ev) {
-				saveTSV();
+				model.saveTSV();
 			}
 		});
 		menu.add(menuItem);
@@ -146,8 +148,8 @@ public class Foo {
 
 				if (userSelection == JFileChooser.APPROVE_OPTION) {
 					File fileToSave = fileChooser.getSelectedFile();
-					filename = fileToSave.getAbsolutePath();
-					saveTSV();
+					String filename = fileToSave.getAbsolutePath();
+					model.saveTSV(filename);
 				}
 			}
 		});
@@ -184,8 +186,8 @@ public class Foo {
 		return menuBar;
 	}
 
-	private static void createAndShowGui() {
-		Foo mainPanel = new Foo();
+	private static void createAndShowGui(String filename) {
+		Foo mainPanel = new Foo(filename);
 
 		JFrame frame = new JFrame(path.toString());
 		frame.setJMenuBar(mainPanel.getMenuBar());
@@ -194,13 +196,19 @@ public class Foo {
 		frame.pack();
 		frame.setLocationByPlatform(true);
 		frame.setVisible(true);
-
 	}
 
-	private static String filename;
 	private static Path path;
 	private static java.util.List<String> files = new ArrayList<>();
 
+	private static void start(String filename) {	
+		SwingUtilities.invokeLater(new Runnable() {
+			public void run() {
+				createAndShowGui(filename);
+			}
+		});
+	}
+	
 	public static void main(String[] args) throws Exception {
 		if(args.length == 0) {
 			System.err.println("ERROR: Require filename to load.");
@@ -212,7 +220,9 @@ public class Foo {
 			System.err.printf("No such file: '%s'%n", args[0]);
 			System.exit(-1);
 		}
-
+		
+		String filename = null;
+		
 		if(file.isFile()) {
 			path = file.getParentFile().toPath();
 			filename = path.relativize(file.toPath()).toString();
@@ -228,11 +238,7 @@ public class Foo {
 		if(filename == null) {
 			filename = files.get(0);
 		}
-
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				createAndShowGui();
-			}
-		});
+		
+		start(filename);
 	}
 }

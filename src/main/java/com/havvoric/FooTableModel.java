@@ -1,6 +1,10 @@
+package com.havvoric;
+
 import javax.swing.table.AbstractTableModel;
-import java.util.*;
 import java.nio.file.Path;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class FooTableModel extends AbstractTableModel {
 	String curFile;
@@ -71,6 +75,14 @@ public class FooTableModel extends AbstractTableModel {
 		   data.put(maxRow++, row);
 		   */
 		fireTableDataChanged();
+	}
+	
+	public void saveTSV() {
+		saveTSV(curFile);
+	}
+	
+	public void saveTSV(String filename) {
+		System.err.printf("Save '%s' as '%s'%n", curFile, filename);
 	}
 
 	public void setFile(Path path, String filename) {
