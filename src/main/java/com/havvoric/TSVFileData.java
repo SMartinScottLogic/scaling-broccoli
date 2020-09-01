@@ -2,10 +2,7 @@ package com.havvoric;
 
 import org.apache.commons.lang3.StringUtils;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 import java.util.*;
 
 public class TSVFileData {
@@ -47,6 +44,37 @@ public class TSVFileData {
             fr.close();
             tsvFileData.setData(data);
             return tsvFileData;
+        }
+    }
+
+    public void toFile(String filename) {
+        File outputFile = new File(filename);
+        try (FileWriter fw = new FileWriter(outputFile);
+             BufferedWriter bw = new BufferedWriter(fw)) {
+            StringBuilder sb = new StringBuilder();
+            for(int col = 0; col < getColumnCount(); col++) {
+                if(col!=0) {
+                    sb.append('\t');
+                }
+                sb.append(getColumnName(col));
+            }
+            sb.append('\r').append('\n');
+
+            bw.write(sb.toString());
+
+            for(int row = 0; row < getRowCount(); row++) {
+                sb = new StringBuilder();
+                for(int col = 0; col < getColumnCount(); col++) {
+                    if(col != 0) {
+                        sb.append('\t');
+                    }
+                    sb.append(getValueAt(row, col));
+                }
+                sb.append('\r').append('\n');
+                bw.write(sb.toString());
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

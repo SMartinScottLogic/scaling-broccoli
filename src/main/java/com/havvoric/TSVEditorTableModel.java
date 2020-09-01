@@ -60,15 +60,20 @@ public class TSVEditorTableModel extends AbstractTableModel {
 	}
 
 	public void saveAll() {
+		tsvFileData.entrySet().stream().forEach(e -> save(e.getKey(), e.getKey(), e.getValue()));
+	}
 
+	private void save(String filename, String targetFilename, TSVFileData tsvFileData) {
+		System.err.printf("Save '%s' as '%s'%n", filename, targetFilename);
+		tsvFileData.toFile(filename);
 	}
 
 	public void save() {
-		save(curFile);
+		save(curFile, curFile, tsvFileData.get(curFile));
 	}
 	
 	public void save(String filename) {
-		System.err.printf("Save '%s' as '%s'%n", curFile, filename);
+		save(curFile, filename, tsvFileData.get(curFile));
 	}
 
 	public void setFile(Path path, String filename) {
