@@ -6,21 +6,21 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class FooTableModel extends AbstractTableModel {
+public class TSVEditorTableModel extends AbstractTableModel {
 	String curFile;
-	Map<String, FileData> fileData = new HashMap<>();
+	Map<String, TSVFileData> tsvFileData = new HashMap<>();
 
-	private FileData getFileData(String filename) {
-		if(!fileData.containsKey(curFile)) {
-			FileData tFileData = null;
+	private TSVFileData getFileData(String filename) {
+		if(!tsvFileData.containsKey(curFile)) {
+			TSVFileData tFileData = null;
 			try {
-				tFileData = FileData.fromFile(curFile);
+				tFileData = TSVFileData.fromFile(curFile);
 			} catch(Exception e) {
 				System.err.printf("Failed to load '%s': %s%n", curFile, e.getMessage());
 			}
-			fileData.put(curFile, tFileData);
+			tsvFileData.put(curFile, tFileData);
 		}
-		return fileData.get(filename);
+		return tsvFileData.get(filename);
 	}		
 
 	@Override
@@ -54,34 +54,20 @@ public class FooTableModel extends AbstractTableModel {
 		fireTableCellUpdated(row, col);
 	}
 
-	public void setColumnNames(List<String> columnNames) {
-		getFileData(curFile).setColumnNames(columnNames);
-		fireTableStructureChanged();
-	}
-
-	public void setData(List<List<String>> cellData) {
-		getFileData(curFile).setData(cellData);
-		fireTableDataChanged();
-	}
-
 	public void addRow(List<String> rowData) {
 		getFileData(curFile).addRow(rowData);
-		/*
-		   Map<Integer, String> row = new HashMap<>();
-		   int col = 0;
-		   for(String v : rowData) {
-		   row.put(col++, v);
-		   }
-		   data.put(maxRow++, row);
-		   */
 		fireTableDataChanged();
 	}
-	
-	public void saveTSV() {
-		saveTSV(curFile);
+
+	public void saveAll() {
+
+	}
+
+	public void save() {
+		save(curFile);
 	}
 	
-	public void saveTSV(String filename) {
+	public void save(String filename) {
 		System.err.printf("Save '%s' as '%s'%n", curFile, filename);
 	}
 
@@ -89,9 +75,5 @@ public class FooTableModel extends AbstractTableModel {
 		curFile = path.resolve(filename).toString();
 		fireTableStructureChanged();
 		fireTableDataChanged();
-		/*
-		   setColumnNames(Collections.singletonList(filename));
-		   setData(Collections.singletonList(Collections.singletonList("data")));
-		   */
 	}
 }

@@ -1,31 +1,28 @@
 package com.havvoric;
 
-import java.awt.BorderLayout;
-import java.awt.Font;
-
-import java.util.*;
-import java.io.*;
 import javax.swing.*;
-import javax.swing.event.*;
-import javax.swing.table.*;
-
+import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ListSelectionListener;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Comparator;
 
-import java.nio.file.*;
+public class TSVEditor {
+	private final JPanel panel_1 = new JPanel();
+	private final JMenuBar menuBar = new JMenuBar();
+	private final TSVEditorTableModel model = new TSVEditorTableModel();
 
-public class Foo {
-	private JPanel panel_1 = new JPanel();
-	private JMenuBar menuBar = new JMenuBar();
-	private FooTableModel model = new FooTableModel();
-	private JScrollPane scrollPane;
-
-	public Foo(String filename) {
+	public TSVEditor(String filename) {
 		model.setFile(path, filename);
 
 		JTable table = new JTable(model);
 		table.setFont(new Font("Times New Roman", Font.PLAIN, 13));
-		scrollPane = new JScrollPane(table); 
+		JScrollPane scrollPane = new JScrollPane(table);
 		table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
 		DefaultListModel<String> listModel = new DefaultListModel<>();
@@ -57,9 +54,6 @@ public class Foo {
 				return;
 			}
 
-			int firstIndex = e.getFirstIndex();
-			int lastIndex = e.getLastIndex();
-
 			// Find out which indexes are selected.
 			int minIndex = lsm.getMinSelectionIndex();
 			int maxIndex = lsm.getMaxSelectionIndex();
@@ -70,36 +64,7 @@ public class Foo {
 			}
 		}
 	}
-/*
-	private void saveTSV() {
-		System.err.print("Writing file to: '" + filename + "'...");
-		File outputFile = new File(filename);
-		try (FileWriter fw = new FileWriter(outputFile);
-				PrintWriter printWriter = new PrintWriter(fw)) {
-			for(int column = 0; column < model.getColumnCount(); column ++) {
-				if(column > 0) {
-					printWriter.printf("\t");
-				}
-				printWriter.printf("%s", model.getColumnName(column));
-			}
-			printWriter.printf("\r\n");
-			for(int row = 0; row < model.getRowCount(); row ++) {
-				for(int column = 0; column < model.getColumnCount(); column ++) {
-					if(column > 0) {
-						printWriter.printf("\t");
-					}
-					printWriter.printf("%s", model.getValueAt(row, column));
-				}
-				printWriter.printf("\r\n");
-			}
-			printWriter.close();
-			System.err.println("done.");
-				}
-		catch (IOException ioe) {
-			System.out.println("error: " + ioe.getMessage());
-		}
-	}
-*/
+
 	private void populateMenu() {
 		//Build the first menu.
 		JMenu menu = new JMenu("File");
@@ -108,60 +73,51 @@ public class Foo {
 
 		//a group of JMenuItems
 		JMenuItem menuItem = new JMenuItem("Dump", KeyEvent.VK_D);
-		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, ActionEvent.ALT_MASK));
-		menuItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
+		menuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_1, InputEvent.ALT_DOWN_MASK));
+		menuItem.addActionListener(ev -> {
+			for(int column = 0; column < model.getColumnCount(); column ++) {
+				if(column > 0) {
+					System.err.print("\t");
+				}
+				System.err.printf("%s", model.getColumnName(column));
+			}
+			System.err.printf("%n");
+			for(int row = 0; row < model.getRowCount(); row ++) {
 				for(int column = 0; column < model.getColumnCount(); column ++) {
 					if(column > 0) {
-						System.err.printf("\t");
+						System.err.print("\t");
 					}
-					System.err.printf("%s", model.getColumnName(column));
+					System.err.printf("%s", model.getValueAt(row, column));
 				}
 				System.err.printf("%n");
-				for(int row = 0; row < model.getRowCount(); row ++) {
-					for(int column = 0; column < model.getColumnCount(); column ++) {
-						if(column > 0) {
-							System.err.printf("\t");
-						}
-						System.err.printf("%s", model.getValueAt(row, column));
-					}
-					System.err.printf("%n");
-				}
 			}
 		});
 		menu.add(menuItem);
 
 		menuItem = new JMenuItem("Save", KeyEvent.VK_S);
-		menuItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				model.saveTSV();
+		menuItem.addActionListener(ev -> model.save());
+		menu.add(menuItem);
+		menuItem = new JMenuItem("Save As...", KeyEvent.VK_A);
+		menuItem.addActionListener(ev -> {
+			JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setDialogTitle("Specify a file to save");
+
+			int userSelection = fileChooser.showSaveDialog(getPanel1());
+
+			if (userSelection == JFileChooser.APPROVE_OPTION) {
+				File fileToSave = fileChooser.getSelectedFile();
+				String filename = fileToSave.getAbsolutePath();
+				model.save(filename);
 			}
 		});
 		menu.add(menuItem);
-		menuItem = new JMenuItem("Save As...", KeyEvent.VK_A);
-		menuItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				JFileChooser fileChooser = new JFileChooser();
-				fileChooser.setDialogTitle("Specify a file to save");
-
-				int userSelection = fileChooser.showSaveDialog(getPanel1());
-
-				if (userSelection == JFileChooser.APPROVE_OPTION) {
-					File fileToSave = fileChooser.getSelectedFile();
-					String filename = fileToSave.getAbsolutePath();
-					model.saveTSV(filename);
-				}
-			}
-		});
+		menuItem = new JMenuItem("Save All");
+		menuItem.addActionListener(ev -> model.saveAll());
 		menu.add(menuItem);
 		//a group of check box menu items
 		menu.addSeparator();
 		menuItem = new JMenuItem("Exit", KeyEvent.VK_X);
-		menuItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				System.exit(0);
-			}
-		});
+		menuItem.addActionListener(ev -> System.exit(0));
 		menu.add(menuItem);
 
 		//Build the first menu.
@@ -170,11 +126,7 @@ public class Foo {
 		menuBar.add(menu);
 
 		menuItem = new JMenuItem("Append Row", KeyEvent.VK_R);
-		menuItem.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent ev) {
-				model.addRow(new ArrayList<String>());
-			}
-		});
+		menuItem.addActionListener(ev -> model.addRow(new ArrayList<>()));
 		menu.add(menuItem);
 	}
 
@@ -187,7 +139,7 @@ public class Foo {
 	}
 
 	private static void createAndShowGui(String filename) {
-		Foo mainPanel = new Foo(filename);
+		TSVEditor mainPanel = new TSVEditor(filename);
 
 		JFrame frame = new JFrame(path.toString());
 		frame.setJMenuBar(mainPanel.getMenuBar());
@@ -199,14 +151,10 @@ public class Foo {
 	}
 
 	private static Path path;
-	private static java.util.List<String> files = new ArrayList<>();
+	private static final java.util.List<String> files = new ArrayList<>();
 
 	private static void start(String filename) {	
-		SwingUtilities.invokeLater(new Runnable() {
-			public void run() {
-				createAndShowGui(filename);
-			}
-		});
+		SwingUtilities.invokeLater(() -> createAndShowGui(filename));
 	}
 	
 	public static void main(String[] args) throws Exception {
