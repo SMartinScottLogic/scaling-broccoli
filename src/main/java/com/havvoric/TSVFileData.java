@@ -16,17 +16,12 @@ public class TSVFileData {
         try (FileReader fr = new FileReader(inputFile);
              BufferedReader br = new BufferedReader(fr)) {
             TSVFileData tsvFileData = new TSVFileData();
-            String firstRow = br.readLine().trim();
+            String firstRow = br.readLine();
             if (StringUtils.isBlank(firstRow)) {
                 System.err.printf("Failed to read headers from: '%s'. Aborting load.%n", filename);
                 return null;
             }
-
-            // headers:
-            String[] cn = firstRow.split("\t");
-
-			List<String> columnNames = new ArrayList<>();
-			Collections.addAll(columnNames, cn);
+            List<String> columnNames = TSVFileData.extractRow(firstRow);
             tsvFileData.setColumnNames(columnNames);
 
             // rows
@@ -34,17 +29,21 @@ public class TSVFileData {
             List<List<String>> data = new ArrayList<>();
             // data rows
             for (Object tableLine : tableLines) {
-                String line = tableLine.toString().trim();
-                String[] dataRow = line.split("\t");
-                ArrayList<String> strings = new ArrayList<>();
-                Collections.addAll(strings, dataRow);
-                data.add(strings);
+                data.add(extractRow(tableLine));
             }
 
             fr.close();
             tsvFileData.setData(data);
             return tsvFileData;
         }
+    }
+
+    static List<String> extractRow(Object raw) {
+        String line = raw.toString().stripTrailing();
+        String [] dataLine = line.split("\t");
+        ArrayList<String> strings = new ArrayList<>();
+        Collections.addAll(strings, dataLine);
+        return strings;
     }
 
     public void toFile(String filename) {
