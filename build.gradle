@@ -27,3 +27,5 @@ jar {
         )
     }
 }
+
+sourceCompatibility = 11
